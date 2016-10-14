@@ -1,0 +1,391 @@
+---
+title: "Basal statistik"
+author: "Max Gordon"
+date: "October 12, 2016"
+output: 
+  slidy_presentation:
+    css: "./custom_slidy.css"
+    includes:
+      after_body: "./footer.html"
+---
+
+```{r setup, include=FALSE, echo=FALSE}
+knitr::opts_chunk$set(echo = FALSE, fig.height = 5, fig.width = 7)
+library(Gmisc)
+library(magrittr)
+```
+
+## Vad är statistik? {.spaced .coin}
+
+- Ett nödvändigt ont?
+- Något vi tvingas till?
+- Ett verktyg?
+
+## Varför kunna statistik? {.spaced}
+
+Alternativ 1: "hålla hakarna"
+
+Alternativ 2: "operera själv"
+
+<div style="text-align: right; padding-right: 2em;">*En subjektiv föreläsning*</div>
+
+## Statistiknivåer {.spaced}
+
+1. Deskriptiv statistik (medelvärde, median)
+2. Effektstorlekar (fisher, t-test, regressioner)
+3. Prediktion (machine learning)
+
+## Vad innebär ett sample?
+
+- Slumpmässigt urval
+
+```{r}
+set.seed(123213213)
+subjects = 1000
+my_sd = 10
+shift = qnorm(1-.001, sd=my_sd)*1.2
+test_set = rnorm(subjects, mean=shift, sd=my_sd)
+test_set = append(test_set, rnorm(subjects/4, mean=shift+qnorm(1-.01, sd=my_sd)*1.5, sd=my_sd*2.5))
+test_set = append(test_set, rnorm(subjects, mean= shift+qnorm(1-.01, sd=my_sd)*3, sd=my_sd))
+
+histSample <- function(data, size) {
+  par(mfrow=c(1,2))
+  single_sample <- sample(data, size = size)
+  hist(data, col="#888888", breaks=60, 
+       main=data %>% 
+         mean %>% 
+         txtRound(1) %>% 
+         paste("Org. population\nMedel:", .), 
+       xlab="")
+  hist(single_sample, col="blue", breaks=60, 
+       main=single_sample %>% 
+         mean %>% 
+         txtRound(1) %>% 
+         paste("Sample n =",  length(single_sample), "\nMedel:", .), 
+       xlab="")
+}
+histSample(test_set, 50)
+```
+
+## Sample lite fler
+
+```{r}
+histSample(test_set, 100)
+```
+
+## Ännu lite fler
+
+```{r}
+histSample(test_set, 1000)
+```
+
+## Centrala gränsvärdessatsen
+
+- En av de viktigaste verktygen
+- Intuitivt inte så svår att förstå
+
+```{r, fig.height=4}
+mu = mean(test_set)
+
+runs = 20000
+sample_runs = c(4, 10, 50)
+s_matrix = matrix(nrow = length(sample_runs), ncol=runs)
+for (t in 1:length(sample_runs)){
+  sample_runs[t]
+  for (i in 1:runs){
+	  s_matrix[t, i] <- mean(sample(test_set, sample_runs[t]))
+  }
+}
+
+par(mfrow=c(2,2))
+hist(test_set, col="blue", breaks=60, main=paste("Medel:", round(mu,1)), xlab="")
+x_max = max(s_matrix[1,])
+x_min = min(s_matrix[1,])
+y_max = 3200
+colors = c("orange", "yellow", "green")
+for (i in 1:length(sample_runs)){
+  hist(s_matrix[i,], col=colors[i], breaks=200/sqrt(sample_runs[i]+20), main=paste("Sample size:", sample_runs[i]), xlab=NULL, xlim=c(x_min, x_max), ylim=c(0, y_max))
+}
+```
+
+## So what!?
+
+```{r}
+p_value <- 0.05
+shift <- qnorm(1-(p_value/1))*2
+sd1 <- 1
+sd2 <- .6
+
+xfit1 <- seq(-4,4, length=5000)
+yfit1 <- dnorm(xfit1, mean=0, sd=sd1)
+
+xfit2 <- xfit1 + shift
+yfit2 <- dnorm(xfit2, mean=shift, sd=sd2)
+
+main_title <- ""
+plot(xfit1, yfit1, type="n", xlim=c(min(xfit1), max(xfit2)), ylim=c(0, max(yfit1, yfit2)), 
+ylab = "",
+xlab = "",
+main= main_title)
+
+p_value = .05
+lb1 = mean(xfit1) + round(qnorm(p_value/2), 2)
+ub1 = mean(xfit1) - round(qnorm(p_value/2), 2)
+i1 <- xfit1 >= lb1 & xfit1 <= ub1
+
+
+# Second normal curve
+lb2 = mean(xfit2) + round(qnorm(p_value/2), 2)*sd2
+ub2 = mean(xfit2) - round(qnorm(p_value/2), 2)*sd2
+i2 <- xfit2 >= lb2 & xfit2 <= ub2
+
+lines(xfit2, yfit2, col="#555555", lwd=2)
+lines(xfit1, yfit1, col="#555555", lwd=2)
+```
+
+## So what!?
+
+```{r}
+p_value <- 0.05
+shift <- qnorm(1-(p_value/1))*2
+sd1 <- 1
+sd2 <- .6
+
+xfit1 <- seq(-4,4, length=5000)
+yfit1 <- dnorm(xfit1, mean=0, sd=sd1)
+
+xfit2 <- xfit1 + shift
+yfit2 <- dnorm(xfit2, mean=shift, sd=sd2)
+
+main_title <- ""
+plot(xfit1, yfit1, type="n", xlim=c(min(xfit1), max(xfit2)), ylim=c(0, max(yfit1, yfit2)), 
+ylab = "",
+xlab = "",
+main= main_title)
+
+p_value = .05
+lb1 = mean(xfit1) + round(qnorm(p_value/2), 2)
+ub1 = mean(xfit1) - round(qnorm(p_value/2), 2)
+i1 <- xfit1 >= lb1 & xfit1 <= ub1
+
+
+# Second normal curve
+lb2 = mean(xfit2) + round(qnorm(p_value/2), 2)*sd2
+ub2 = mean(xfit2) - round(qnorm(p_value/2), 2)*sd2
+i2 <- xfit2 >= lb2 & xfit2 <= ub2
+
+
+d1 = 100
+d2 = 50
+clr1 <- "#809FFEAA"
+clr2 <- "#FF9900AA"
+polygon(c(lb1, xfit1[i1], ub1), c(0, yfit1[i1], 0), col=clr1, border=NA)
+
+polygon(c(lb2, xfit2[i2], ub2), c(0, yfit2[i2], 0), col=clr2, border=NA)
+
+lines(xfit2, yfit2, col="#555555", lwd=2)
+lines(xfit1, yfit1, col="#555555", lwd=2)
+```
+
+## P-värden
+
+- Användbara?
+- Problematiska?
+
+<img src="http://3.bp.blogspot.com/-y_hvRb5anNc/VTGkru5LZeI/AAAAAAAABNo/GAVvAbPS-CQ/s1600/worship.gif" />
+
+## En klassiker {.coin}
+
+```{r}
+library(graphics)
+
+binom_plot_function <- function(x_max, my_title = FALSE, my_prob = .5, edges = 0, 
+                                xlab="Antal kronor",
+                                col=c("green", "gold", "red")){
+  barplot(
+    dbinom(0:x_max, x_max, my_prob)*100, 
+    col=c(rep(col[1], edges), rep(col[2], x_max-2*edges+1), rep(col[3], edges)),
+    #names=0:x_max,
+    ylab="Sannolikhet i %",
+    xlab=xlab, 
+    names.arg=0:x_max)
+  if (my_title != FALSE ){
+    title(main=my_title)
+  }
+}
+```
+
+```{r}
+par(bg = rgb(1,1,1,alpha = .7))
+layout(matrix(1:4, 
+              2, 
+              byrow=TRUE))
+binom_plot_function(1, paste("Singla slant", 1, "ggr"))
+binom_plot_function(2, paste("Singla slant", 2, "ggr"))
+binom_plot_function(3, paste("Singla slant", 3, "ggr"))
+binom_plot_function(4, paste("Singla slant", 4, "ggr"))
+```
+
+## Ett exempel {.coin}
+
+- 2 st kronor av 10 singlingar
+
+```{r}
+par(bg = rgb(1,1,1,alpha = .7))
+layout(matrix(c(1,1,2,3), 2, 2, byrow=TRUE))
+binom_plot_function(10, paste("Singla slant", 10, "ggr"), edges=0, col=c("#449944", "gold", "#994444"))
+binom_plot_function(10, edges=3, col=c("#449944", "gold", "gold"))
+binom_plot_function(10, edges=3, col=c("#449944", "gold", "#994444"))
+```
+
+## Att vara parametrisk eller inte?
+
+### Parametrisk metod = gör antaganden
+
+### Icke-parametrisk = gör inga/få antaganden
+
+## Att vara parametrisk eller inte?
+
+### Parametrisk metod = gör antaganden
+
+- Ger tolkningsbart storleksestimat
+- Antagandena ibland svåra att testa
+- Ex. regressioner, t-test
+
+### Icke-parametrisk = gör inga/få antaganden
+
+- Ger ett svårtolkat storleksestimat
+- "Alltid sant" men "inte alltid relevant""
+- Ex. Fischers exakta test, Wilcoxon rank-sum test
+
+## Regression
+
+Löser ekvationen
+
+$$y = a + b * x$$
+
+t.ex.
+
+$$Syst. BT = basnivå + \beta_{ålder} * ålder$$ 
+
+## Regression forts I
+
+- Enkelt koncept
+
+$$Syst. BT = basnivå + \beta_{ålder} * ålder$$ 
+
+```{r}
+library(ggplot2)
+data.frame(
+  age = c(45, 65),
+  bt = c(134, 155)
+) %>%  
+  ggplot(aes(x = age, y = bt)) +
+  geom_point() +
+  scale_y_continuous(lim=c(120, 160), expand = c(0,0)) +
+  theme_bw() +
+  xlab("Ålder") +
+  ylab("Systoliskt blodtryck (mmHg)")
+```
+
+## Regression forts I
+
+- Enkelt koncept
+
+$$Syst. BT = basnivå + \beta_{ålder} * ålder$$ 
+
+```{r, warning = FALSE}
+library(ggplot2)
+data.frame(
+  age = c(45, 65),
+  bt = c(134, 155)
+) %>%  
+  ggplot(aes(x = age, y = bt)) +
+  geom_point() +
+  geom_smooth(method = "lm") +
+  scale_y_continuous(lim=c(120, 160), expand = c(0,0)) +
+  theme_bw() +
+  xlab("Ålder") +
+  ylab("Systoliskt blodtryck (mmHg)")
+```
+
+
+## Regression forts II
+
+$$Syst. BT = basnivå + \beta_{ålder} * ålder$$ 
+
+```{r, warning = FALSE}
+library(ggplot2)
+data.frame(
+  age = c(45, 65),
+  bt = c(134, 155)
+) %>%  
+  ggplot(aes(x = age, y = bt)) +
+  geom_point() +
+  geom_point(data = data.frame(age = 55, bt = 130), color = "red") +
+  geom_smooth(method = "lm") +
+  scale_y_continuous(lim=c(120, 160), expand = c(0,0)) +
+  theme_bw() +
+  xlab("Ålder") +
+  ylab("Systoliskt blodtryck (mmHg)")
+```
+
+
+## Regression forts II
+
+$$Syst. BT = basnivå + \beta_{ålder} * ålder$$ 
+
+```{r, warning = FALSE}
+library(ggplot2)
+data.frame(
+  age = c(45, 65, 55),
+  bt = c(134, 155, 130)
+) %>%  
+  ggplot(aes(x = age, y = bt)) +
+  geom_point() +
+  geom_smooth(method = "lm") +
+  scale_y_continuous(lim=c(120, 160), expand = c(0,0)) +
+  theme_bw() +
+  xlab("Ålder") +
+  ylab("Systoliskt blodtryck (mmHg)")
+```
+
+## Regression forts III
+
+### Att byta y-axeln
+
+- Binära variabler (ex. logistisk regression)
+- Risk över tid (Cox regression)
+- Antal händelser (Poisson regression)
+- ...
+
+## Regression forts IV
+
+### Öka komplexitent allteftersom
+
+- Icke-linjära förhållanden
+- Interaktioner
+- Random effects
+
+## Sammanfattning {.space}
+
+- Vi kan förutspå hur sammanslagna värden kommer bete sig
+- Vi kan aldrig säga att något inte är sant bara hur låg sannolikhet det observerade fallet har
+- Parametriska tester är lättare att förstå
+- Regressioner är det ni pysslade med på högstadiet som tagits till en användbar nivå
+
+## Sen då?
+
+<div style="margin: 2em">
+- Data munging
+- "Fast-track publishing" med R
+- Icke-linjära regressioner
+- Avancerad regressionsmodellering
+- Överlevnadsanalyser
+- Epidemiologi
+- DAG
+- Bootstrapping
+- Random effects
+- Machine learning
+- Neurala nätverk
+</div>

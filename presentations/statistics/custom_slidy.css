@@ -1,0 +1,38 @@
+body {
+  font-family: cursive; 
+}
+
+div.coin {
+  background-image: url("http://www.publicdomainpictures.net/pictures/20000/velka/single-coin-on-money-background.jpg");
+  background-repeat: no-repeat;
+  background-size: cover;
+  background-position: left top;
+}
+
+.slide {
+  padding: 1em;
+}
+
+.spaced, 
+  .spaced > ol > li, 
+  .spaced > ul > li, 
+  .spaced > div, 
+  .spaced > p {
+  line-height: 4em;
+}
+
+#footer {
+  position:absolute;
+  bottom: 19px;
+  width: 100%;
+  border-top: 1px solid #AAA;
+  height: 100px;   /* Height of the footer */
+  line-height: 100px;
+  padding-left: 2em;
+  background-color: #FFFFFFAA;
+  background-image: url("http://expertsvar.se/wp-content/uploads/2015/02/KI-Logo.png");
+  background-repeat: no-repeat;
+  background-size: auto 100px;
+  background-position: right 100px top;
+  z-index: 200;
+}
